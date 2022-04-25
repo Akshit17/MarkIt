@@ -4,11 +4,22 @@ import numpy as np
 #TODO: Abstract the rectangular area containing the bubbles from the image
 
 def extract_rect(contours):                          #Needs optimization as it does not work for all bubblesheet examples
+    rect_contours = []
     for c in contours:
-        if  cv2.contourArea(c) > 5000:
+        if  cv2.contourArea(c) > 10000:
             perimeter = cv2.arcLength(c, True)  
-            approx = cv2.approxPolyDP(c, 0.02*perimeter, True) 
-            x, y, w, h = cv2.boundingRect(approx)
+            approx = cv2.approxPolyDP(c, 0.02*perimeter, True)    #approximates a curve or a polygon with another curve/polygon with less vertices so that the distance between them is less or equal to the specified precision. Uses Douglas-Peucker algorithm 
+            if len(approx) == 4:
+                rect_contours.append(c)
+
+    return rect_contours
+
+
+def rect_points(rect_contour):
+    perimeter = cv2.arcLength(c, True)  
+    approx = cv2.approxPolyDP(c, 0.02*perimeter, True)
+
+    x, y, w, h = cv2.boundingRect(approx)
 
     # Corner points of the rectangle further used to be used to wrap the rectangular section
     point_1 = np.array([x, y])
@@ -24,8 +35,6 @@ def extract_rect(contours):                          #Needs optimization as it d
 
     return corner_list
 
-
-
 #TODO: Find the bubbles and draw them on the image
 def find_bubbles(contours):
     bubbles = []
@@ -39,14 +48,14 @@ def find_bubbles(contours):
 # img_path = 'bubblesheet_1.jpg'
 # img = cv2.imread(img_path)
 
-img_path = 'bubblesheet_2.jpg'
-img = cv2.imread(img_path)
+# img_path = 'bubblesheet_2.jpg'
+# img = cv2.imread(img_path)
 
 # img_path = 'bubblesheet_3.jpg'
 # img = cv2.imread(img_path)
 
-# img_path = 'bubblesheet_4.jpg'
-# img = cv2.imread(img_path)
+img_path = 'bubblesheet_4.jpg'
+img = cv2.imread(img_path)
 
 
 print(img.shape)            # Original size is 1600 * 1200 and 3 color channels
@@ -77,6 +86,15 @@ cv2.imshow('Contours', img_contours)
 
 img_thresh  = cv2.threshold(img_gray, 170, 255, cv2.THRESH_BINARY_INV)[1]
 cv2.imshow('Threshold', img_thresh)
+
+rect_contours = extract_rect(contours)
+cv2.drawContours(img, rect_contours, -1, (0,255,0), 1)
+
+warp_from = np.float32(rect_points(rect_contours[0]))
+warp_to = np.float32([[0,0], [img_width, 0], [0, img_height], [img_width, img_height]])
+transformation_matrix = cv2.getPerspectiveTransform(warp_from, warp_to)
+img_warp = cv2.warpPerspective(img, transformation_matrix, (img_width, img_height))
+# cv2.imshow('Original', img)
 
 cv2.imshow('Original', img)
 
