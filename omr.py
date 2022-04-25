@@ -16,8 +16,8 @@ def extract_rect(contours):                          #Needs optimization as it d
 
 
 def rect_points(rect_contour):
-    perimeter = cv2.arcLength(c, True)  
-    approx = cv2.approxPolyDP(c, 0.02*perimeter, True)
+    perimeter = cv2.arcLength(rect_contour, True)  
+    approx = cv2.approxPolyDP(rect_contour, 0.02*perimeter, True)
 
     x, y, w, h = cv2.boundingRect(approx)
 
@@ -90,11 +90,14 @@ cv2.imshow('Threshold', img_thresh)
 rect_contours = extract_rect(contours)
 cv2.drawContours(img, rect_contours, -1, (0,255,0), 1)
 
-warp_from = np.float32(rect_points(rect_contours[0]))
-warp_to = np.float32([[0,0], [img_width, 0], [0, img_height], [img_width, img_height]])
+warp_img_width = int(img_width/2)
+warp_img_height = int(img_height/2)
+
+warp_from = np.float32(rect_points(rect_contours[2]))
+warp_to = np.float32([[0,0], [warp_img_width, 0], [0, warp_img_height], [warp_img_width, warp_img_height]])
 transformation_matrix = cv2.getPerspectiveTransform(warp_from, warp_to)
-img_warp = cv2.warpPerspective(img, transformation_matrix, (img_width, img_height))
-# cv2.imshow('Original', img)
+img_warp = cv2.warpPerspective(img, transformation_matrix, (warp_img_height, warp_img_height))
+cv2.imshow('Wrapped Perspective', img_warp)
 
 cv2.imshow('Original', img)
 
