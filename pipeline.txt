@@ -1,0 +1,11 @@
+Optical Mark recognition Pipeline :- 
+
+Turn OG image to Grayscale --> Find Edges --> Make Contours --> Warp Perspective --> Marking and saving final answer
+
+issues :- 
+i) hardcoded values {
+        e.g. 
+        Assuming biggest rectangle in the frame will be section containing bubbles (fails in case when frame doesn't contain the omr sheet borders or omr sheet contains another rectangular area satisfying min. area condition for cv2.contourArea(c). )
+        Threshold values given to functions fail in different lighting conditions  
+        
+}
