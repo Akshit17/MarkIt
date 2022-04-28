@@ -26,6 +26,10 @@ def rect_points(rect_contour):                                     #Something wr
     perimeter = cv2.arcLength(rect_contour, True)  
     approx = cv2.approxPolyDP(rect_contour, 0.02*perimeter, True)
 
+    print("APPROX")
+    print(approx)
+    cv2.drawContours(img, approx, -1, (100,10,55), 18)
+
     x, y, w, h = cv2.boundingRect(approx)
     print("printing x y w h")
     print(x, y, w, h)
@@ -187,40 +191,9 @@ cv2.imshow('Wrapped Perspective', img_warp)
 cv2.imshow('Original', img)
 
 
-
 #TODO: Implement logic for marks counting
+
 cv2.waitKey(0)
 
 
 
-
-# cap = cv2.VideoCapture(0)
-
-# while True:
-#     _, frame = cap.read()
-#     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-
-#     # hue and sat value for hsv img
-#     lower_red = np.array([0, 50, 25])   
-#     upper_red = np.array([255, 255, 180])
-
-#     mask = cv2.inRange(hsv, lower_red, upper_red)  # masking
-#     cv2.imshow('mask', mask)
-
-#     res = cv2.bitwise_and(frame, frame, mask=mask)  
-
-#     smoothed = cv2.filter2D(res, -1, np.ones((15, 15), np.float32)/225)
-#     cv2.imshow('smoothed', smoothed)
-
-#     blur = cv2.GaussianBlur(res, (15, 15), 0)
-#     cv2.imshow('blur', blur)
-
-#     median = cv2.medianBlur(res, 15)
-
-#     cv2.imshow('res', res)
-
-#     cv2.imshow('frame', frame)
-
-#     k = cv2.waitKey(5) & 0xFF
-#     if k == 27:      # key 27 is ESC
-#         break
