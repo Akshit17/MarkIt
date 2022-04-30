@@ -9,8 +9,9 @@ def extract_rect(contours):                          #Needs optimization as it d
         if  cv2.contourArea(c) > 10000:
             perimeter = cv2.arcLength(c, True)  
             approx = cv2.approxPolyDP(c, 0.02*perimeter, True)    #approximates a curve or a polygon with another curve/polygon with less vertices so that the distance between them is less or equal to the specified precision. Uses Douglas-Peucker algorithm 
-            if len(approx) == 4:
-                rect_contours.append(c)
+            # if len(approx) == 4:               #cv2.boundingRect seems to be automatically taking care of this
+            #     rect_contours.append(c)
+            rect_contours.append(c)
 
     rect_contours = sorted(rect_contours, key=cv2.contourArea,reverse=True)
 
@@ -27,10 +28,13 @@ def rect_points(rect_contour):                                     #Something wr
     approx = cv2.approxPolyDP(rect_contour, 0.02*perimeter, True)
 
     print("APPROX")
+    print(type(approx))
     print(approx)
     cv2.drawContours(img, approx, -1, (100,10,55), 18)
+    cv2.drawContours(img, rect_contour, -1, (100,10,55), 1)
+   
 
-    x, y, w, h = cv2.boundingRect(approx)
+    x, y, w, h = cv2.boundingRect(rect_contour)
     print("printing x y w h")
     print(x, y, w, h)
 
@@ -59,57 +63,27 @@ def rect_points(rect_contour):                                     #Something wr
     print("corners list")
     print(corner_list)
 
-    myPointsNew = np.zeros((4, 1, 2), np.int32) 
+    new_cornerlist = np.zeros((4, 1, 2), np.int32) 
     add = corner_list.sum(1)
     # print(add)
     # print(np.argmax(add))
-    myPointsNew[0] = corner_list[np.argmin(add)]   #[0,0]
-    myPointsNew[3] = corner_list[np.argmax(add)]   #[w,h]
+    new_cornerlist[0] = corner_list[np.argmin(add)]   #[0,0]
+    new_cornerlist[3] = corner_list[np.argmax(add)]   #[w,h]
     diff = np.diff(corner_list, axis=1)
-    myPointsNew[1] = corner_list[np.argmin(diff)]  #[w,0]
-    myPointsNew[2] = corner_list[np.argmax(diff)]  #[h,0]
+    new_cornerlist[1] = corner_list[np.argmin(diff)]  #[w,0]
+    new_cornerlist[2] = corner_list[np.argmax(diff)]  #[h,0]
 
-    print("mypointsnew")
-    print(myPointsNew.shape)
+    print(new_cornerlist.shape)
 
-    return myPointsNew
-
-    print(corner_list)
-    print(corner_list.shape)
-
-    return corner_list
-
-def rect_points_2(rect_contour):                                   #Trial 
-    perimeter = cv2.arcLength(rect_contour, True)  
-    approx = cv2.approxPolyDP(rect_contour, 0.02*perimeter, True)
-    print(approx)
-    print(approx.shape)
-
-    approx = approx.reshape((4, 2)) # REMOVE EXTRA BRACKET
-    print(approx)
-    myPointsNew = np.zeros((4, 1, 2), np.int32) # NEW MATRIX WITH ARRANGED POINTS
-    add = approx.sum(1)
-    print(add)
-    print(np.argmax(add))
-    myPointsNew[0] = approx[np.argmin(add)]  #[0,0]
-    myPointsNew[3] =approx[np.argmax(add)]   #[w,h]
-    diff = np.diff(approx, axis=1)
-    myPointsNew[1] =approx[np.argmin(diff)]  #[w,0]
-    myPointsNew[2] = approx[np.argmax(diff)] #[h,0]
-
-    print(myPointsNew)
-
-    return myPointsNew
-
-    # return approx
+    return new_cornerlist
 
 
 #TODO: Find the bubbles and draw them on the image
 def find_bubbles(contours):
-    rows = np.vsplit(img,5)
+    rows = np.vsplit(img,50)
     boxes=[]
     for r in rows:
-        cols= np.hsplit(r,5)
+        cols= np.hsplit(r,50)
         for box in cols:
             boxes.append(box)
     return boxes
@@ -154,39 +128,41 @@ img_contours = img.copy()
 cv2.drawContours(img_contours, contours, -1, (0,255,0), 1)  #parameters are (image, contours, countour_idx, contour_color, contour_thickness) . contour_idx is -1 for all contours
 cv2.imshow('Contours', img_contours)
 
-img_thresh  = cv2.threshold(img_gray, 170, 255, cv2.THRESH_BINARY_INV)[1]
-cv2.imshow('Threshold', img_thresh)
-
 rect_contours = extract_rect(contours)
 cv2.drawContours(img, rect_contours[1], -1, (0,255,0), 1)
 
-# rect_1 = rect_points(rect_contours[0])
-# rect_2 = rect_points(rect_contours[1])
+wrap_points = rect_points(rect_contours[2])
 
-# if rect_1.size != 0 and rect_2.size != 0:
-#     print("Entered successfully")
-#     cv2.drawContours(img, rect_1, -1, (255,0,0), 12)
-#     cv2.drawContours(img, rect_2, -1, (0,0,255), 12)
+if wrap_points.size != 0:
+    cv2.drawContours(img, wrap_points, -1, (0,0,255), 12)
 
 print("how both contour same")
 print(rect_contours[0])
 print("contour 2")
 print(rect_contours[1])
 
-rect_2 = rect_points(rect_contours[1])
-cv2.drawContours(img, rect_2, -1, (0,0,255), 12)
-
+wrap_points = rect_points(rect_contours[2])
+cv2.drawContours(img, wrap_points, -1, (0,0,255), 12)
 
 
 warp_img_width = int(img_width/1.2)
 warp_img_height = int(img_height/1.2)
 
 
-warp_from = np.float32(rect_2)
+warp_from = np.float32(wrap_points)
 warp_to = np.float32([[0,0], [warp_img_width, 0], [0, warp_img_height], [warp_img_width, warp_img_height]])
 transformation_matrix = cv2.getPerspectiveTransform(warp_from, warp_to)
 img_warp = cv2.warpPerspective(img, transformation_matrix, (warp_img_height, warp_img_height))
 cv2.imshow('Wrapped Perspective', img_warp)
+
+img_warp_gray = cv2.cvtColor(img_warp, cv2.COLOR_BGR2GRAY)
+# img_thresh  = cv2.threshold(img_warp_gray, 120, 255, cv2.THRESH_BINARY_INV)[1]
+
+#Using adaptive threshold to get the best threshold value
+img_thresh = cv2.adaptiveThreshold(img_warp_gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
+cv2.imshow('Threshold', img_thresh)
+
+
 
 cv2.imshow('Original', img)
 
