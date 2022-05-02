@@ -79,14 +79,16 @@ def rect_points(rect_contour):                                     #Something wr
 
 
 #TODO: Find the bubbles and draw them on the image
-def find_bubbles(contours):
-    rows = np.vsplit(img,50)
+def find_bubbles(img):
+    rows = np.vsplit(img,5)              #Only work for evenly spead out bubbles
     boxes=[]
     for r in rows:
-        cols= np.hsplit(r,50)
+        cols= np.hsplit(r,5)
         for box in cols:
             boxes.append(box)
+            cv2.imshow("Boxes",rows[4])
     return boxes
+
 
 
 # img_path = 'bubblesheet_1.jpg'
@@ -103,8 +105,8 @@ img = cv2.imread(img_path)
 
 
 print(img.shape)            # Original size is 1600 * 1200 and 3 color channels
-img_width = 700
-img_height = 700
+img_width = 600
+img_height = 600
 img = cv2.resize(img, (img_width, img_height), interpolation=cv2.INTER_AREA)
 
 
@@ -145,8 +147,8 @@ wrap_points = rect_points(rect_contours[2])
 cv2.drawContours(img, wrap_points, -1, (0,0,255), 12)
 
 
-warp_img_width = int(img_width/1.2)
-warp_img_height = int(img_height/1.2)
+warp_img_width = int(img_width/2)
+warp_img_height = int(img_height/2)
 
 
 warp_from = np.float32(wrap_points)
@@ -159,10 +161,25 @@ img_warp_gray = cv2.cvtColor(img_warp, cv2.COLOR_BGR2GRAY)
 # img_thresh  = cv2.threshold(img_warp_gray, 120, 255, cv2.THRESH_BINARY_INV)[1]
 
 #Using adaptive threshold to get the best threshold value
-img_thresh = cv2.adaptiveThreshold(img_warp_gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
-cv2.imshow('Threshold', img_thresh)
+img_thresh = cv2.adaptiveThreshold(img_warp_gray, 200, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
+cv2.imshow('img_thresh', img_thresh)
+
+find_bubbles(img_thresh)
 
 
+nRows = int(2)
+mCols = int(2)
+sizeX = img_thresh.shape[1]
+sizeY = img_thresh.shape[0]
+print(sizeX)
+print(sizeY)
+for i in range(0,nRows):
+    for j in range(0, mCols):
+        roi = img[i*sizeY/nRows:i*sizeY/nRows + sizeY/nRows ,j*sizeX/mCols:j*sizeX/mCols + sizeX/mCols]
+        cv2.imshow('rois'+str(i)+str(j), roi)
+        cv2.imwrite('patches/patch_'+str(i)+str(j)+".jpg", roi)
+
+print(img_thresh.shape)
 
 cv2.imshow('Original', img)
 
