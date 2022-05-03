@@ -11,4 +11,9 @@ i) hardcoded values {
 ii) segmenting single bubble {
         needs to be thought out differently as when trying to extract single bubble img_thresh is needs to be a specificically resized so that further splitting with np.vsplit and np.hsplit results in the single bubble
         
+        only if the bubbles were far apart it would segment precisely
+}
+
+iii) handling intentionally multi-marked quetions {
+        for multiple marked questions setup invald idx_list and idx_list_omr_ans_list
 }
