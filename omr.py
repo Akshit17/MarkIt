@@ -86,7 +86,7 @@ def find_bubbles(img):
         cols= np.hsplit(r,5)
         for box in cols:
             boxes.append(box)
-            cv2.imshow("Boxes",rows[4])
+            cv2.imshow("Boxes",rows[2])
     return boxes
 
 
@@ -167,17 +167,17 @@ cv2.imshow('img_thresh', img_thresh)
 find_bubbles(img_thresh)
 
 
-nRows = int(2)
-mCols = int(2)
-sizeX = img_thresh.shape[1]
-sizeY = img_thresh.shape[0]
-print(sizeX)
-print(sizeY)
-for i in range(0,nRows):
-    for j in range(0, mCols):
-        roi = img[i*sizeY/nRows:i*sizeY/nRows + sizeY/nRows ,j*sizeX/mCols:j*sizeX/mCols + sizeX/mCols]
-        cv2.imshow('rois'+str(i)+str(j), roi)
-        cv2.imwrite('patches/patch_'+str(i)+str(j)+".jpg", roi)
+# nRows = int(2)
+# mCols = int(2)
+# sizeX = img_thresh.shape[1]
+# sizeY = img_thresh.shape[0]
+# print(sizeX)
+# print(sizeY)
+# for i in range(0,nRows):
+#     for j in range(0, mCols):
+#         roi = img[i*sizeY/nRows:i*sizeY/nRows + sizeY/nRows ,j*sizeX/mCols:j*sizeX/mCols + sizeX/mCols]
+#         cv2.imshow('rois'+str(i)+str(j), roi)
+#         cv2.imwrite('patches/patch_'+str(i)+str(j)+".jpg", roi)
 
 print(img_thresh.shape)
 
