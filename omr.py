@@ -1,3 +1,4 @@
+from charset_normalizer import detect
 import cv2
 import numpy as np
 
@@ -80,16 +81,76 @@ def rect_points(rect_contour):                                     #Something wr
 
 #TODO: Find the bubbles and draw them on the image
 def find_bubbles(img):
-    rows = np.vsplit(img,5)              #Only work for evenly spead out bubbles
+    rows = np.vsplit(img,10)              #Only work for evenly spead out bubbles
     boxes=[]
     for r in rows:
-        cols= np.hsplit(r,5)
+        cols= np.hsplit(r,10)
         for box in cols:
             boxes.append(box)
-            cv2.imshow("Boxes",rows[2])
+            cv2.imshow("Boxes",rows[0])
     return boxes
 
 
+def hough_circles(img):
+
+    #load image
+    # img = self.imager.values[self.imager.index, :, :]
+    # img = np.float(self.image)
+    image8 = np.uint8(img)
+    output = image8.copy()
+
+    #apply hough transform
+    circles = cv2.HoughCircles(image8, cv2.HOUGH_GRADIENT, 24, 50)
+
+    #place circles and cente rectangle on image
+    if circles is not None:
+        circles = np.round(circles[0, :].astype("int"))
+
+        for (x, y, r) in circles:
+            cv2.circle(output, (x,y), r, (0, 255, 0), 4)
+            cv2.rectangle(output, (x - 5, y - 5), (x + 5, y + 5), (0, 128, 255), -1)
+
+        cv2.imshow("output", np.hstack([image8, output]))
+        cv2.waitKey(0)
+
+def detect_blob(image):
+        # Set our filtering parameters
+    # Initialize parameter setting using cv2.SimpleBlobDetector
+    params = cv2.SimpleBlobDetector_Params()
+    
+    # Set Area filtering parameters
+    params.filterByArea = True
+    params.minArea = 90
+    
+    # Set Circularity filtering parameters
+    params.filterByCircularity = True
+    params.minCircularity = 0.2
+    
+    # Set Convexity filtering parameters
+    params.filterByConvexity = True
+    params.minConvexity = 0.2
+        
+    # Set inertia filtering parameters
+    params.filterByInertia = True
+    params.minInertiaRatio = 0.01
+    
+    # Create a detector with the parameters
+    detector = cv2.SimpleBlobDetector_create(params)
+        
+    # Detect blobs
+    keypoints = detector.detect(image)
+    
+    # Draw blobs on our image as red circles
+    blank = np.zeros((1, 1))
+    blobs = cv2.drawKeypoints(image, keypoints, blank, (0, 0, 255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+    
+    number_of_blobs = len(keypoints)
+    text = "Number of Circular Blobs: " + str(len(keypoints))
+    cv2.putText(blobs, text, (20, 550), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 100, 255), 2)
+    
+    # Show blobs
+    cv2.imshow("Filtering Circular Blobs Only", blobs)
+    cv2.waitKey(0)
 
 # img_path = 'bubblesheet_1.jpg'
 # img = cv2.imread(img_path)
@@ -147,8 +208,10 @@ wrap_points = rect_points(rect_contours[2])
 cv2.drawContours(img, wrap_points, -1, (0,0,255), 12)
 
 
-warp_img_width = int(img_width/2)
-warp_img_height = int(img_height/2)
+# warp_img_width = int(img_width/2)
+# warp_img_height = int(img_height/2)
+warp_img_width = int(img_width)
+warp_img_height = int(img_height)
 
 
 warp_from = np.float32(wrap_points)
@@ -164,20 +227,9 @@ img_warp_gray = cv2.cvtColor(img_warp, cv2.COLOR_BGR2GRAY)
 img_thresh = cv2.adaptiveThreshold(img_warp_gray, 200, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
 cv2.imshow('img_thresh', img_thresh)
 
-find_bubbles(img_thresh)
-
-
-# nRows = int(2)
-# mCols = int(2)
-# sizeX = img_thresh.shape[1]
-# sizeY = img_thresh.shape[0]
-# print(sizeX)
-# print(sizeY)
-# for i in range(0,nRows):
-#     for j in range(0, mCols):
-#         roi = img[i*sizeY/nRows:i*sizeY/nRows + sizeY/nRows ,j*sizeX/mCols:j*sizeX/mCols + sizeX/mCols]
-#         cv2.imshow('rois'+str(i)+str(j), roi)
-#         cv2.imwrite('patches/patch_'+str(i)+str(j)+".jpg", roi)
+# find_bubbles(img_thresh)
+# hough_circles(img_thresh)
+detect_blob(img_thresh)
 
 print(img_thresh.shape)
 
