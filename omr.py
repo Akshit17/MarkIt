@@ -1,6 +1,7 @@
-from charset_normalizer import detect
 import cv2
 import numpy as np
+
+import imutils
 
 #TODO: Abstract the rectangular area containing the bubbles from the image
 
@@ -113,61 +114,45 @@ def hough_circles(img):
         cv2.imshow("output", np.hstack([image8, output]))
         cv2.waitKey(0)
 
-def detect_blob(image):
-        # Set our filtering parameters
-    # Initialize parameter setting using cv2.SimpleBlobDetector
-    params = cv2.SimpleBlobDetector_Params()
-    
-    # Set Area filtering parameters
-    params.filterByArea = True
-    params.minArea = 90
-    
-    # Set Circularity filtering parameters
-    params.filterByCircularity = True
-    params.minCircularity = 0.2
-    
-    # Set Convexity filtering parameters
-    params.filterByConvexity = True
-    params.minConvexity = 0.2
-        
-    # Set inertia filtering parameters
-    params.filterByInertia = True
-    params.minInertiaRatio = 0.01
-    
-    # Create a detector with the parameters
-    detector = cv2.SimpleBlobDetector_create(params)
-        
-    # Detect blobs
-    keypoints = detector.detect(image)
-    
-    # Draw blobs on our image as red circles
-    blank = np.zeros((1, 1))
-    blobs = cv2.drawKeypoints(image, keypoints, blank, (0, 0, 255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-    
-    number_of_blobs = len(keypoints)
-    text = "Number of Circular Blobs: " + str(len(keypoints))
-    cv2.putText(blobs, text, (20, 550), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 100, 255), 2)
-    
-    # Show blobs
-    cv2.imshow("Filtering Circular Blobs Only", blobs)
+def bubble_contour(thresh, img_warp):
+    # find contours in the thresholded image, then initialize
+    # the list of contours that correspond to questions
+    # thresh_img_contours = thresh.copy()
+    thresh_img_contours = img_warp.copy()
+    questionCnts = []
+
+    cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
+
+    cnts = imutils.grab_contours(cnts)
+    # loop over the contours
+    for c in cnts:
+        # compute the bounding box of the contour, then use the bounding box to derive the aspect ratio
+        (x, y, w, h) = cv2.boundingRect(c)
+        ar = w / float(h)
+       
+        if w >= 4 and h >= 4 and ar >= 0.01 and ar <= 10.0 and cv2.contourArea(c) > 80:    #each bubble should be distinctively seperated from the other bubbles
+            questionCnts.append(c) 
+
+    cv2.drawContours(thresh_img_contours, questionCnts, -1, (0,0,255), 1)
+    cv2.imshow("Thresh_Contours", thresh_img_contours)
+    print(len(questionCnts))
     cv2.waitKey(0)
 
+    return questionCnts
+
+
+
 # img_path = 'bubblesheet_1.jpg'
-# img = cv2.imread(img_path)
-
 # img_path = 'bubblesheet_2.jpg'
-# img = cv2.imread(img_path)
-
 # img_path = 'bubblesheet_3.jpg'
-# img = cv2.imread(img_path)
-
-img_path = 'bubblesheet_4.jpg'
+# img_path = 'bubblesheet_4.jpg'
+img_path = 'samples/250_bubblesheet_2.png'
 img = cv2.imread(img_path)
 
 
 print(img.shape)            # Original size is 1600 * 1200 and 3 color channels
-img_width = 600
-img_height = 600
+img_width = 700
+img_height = 700
 img = cv2.resize(img, (img_width, img_height), interpolation=cv2.INTER_AREA)
 
 
@@ -178,7 +163,7 @@ img_blur = cv2.GaussianBlur(img_gray, (5,5), 0)      # blurred image
                         #https://docs.opencv.org/4.x/d4/d13/tutorial_py_filtering.html
 cv2.imshow('Blurred', img_blur)
 
-img_canny = cv2.Canny(img_blur, 20, 110)                         # Edge detection on processed image using Canny edge detection , binary thresholding could have been an alternative (i.e  If the pixel value is smaller than the threshold, it is set to 0, otherwise it is set to a maximum value. )
+img_canny = cv2.Canny(img_blur, 10, 30)                         # Edge detection on processed image using Canny edge detection , binary thresholding could have been an alternative (i.e  If the pixel value is smaller than the threshold, it is set to 0, otherwise it is set to a maximum value. )
                  #  ( input_img, Lower Threshold, Upper threshold)       
                     #  https://docs.opencv.org/3.4/da/d22/tutorial_py_canny.html
 
@@ -194,19 +179,17 @@ cv2.imshow('Contours', img_contours)
 rect_contours = extract_rect(contours)
 cv2.drawContours(img, rect_contours[1], -1, (0,255,0), 1)
 
-wrap_points = rect_points(rect_contours[2])
+wrap_points = rect_points(rect_contours[1])
 
 if wrap_points.size != 0:
     cv2.drawContours(img, wrap_points, -1, (0,0,255), 12)
 
-print("how both contour same")
+print("contour_1 (0)")
 print(rect_contours[0])
-print("contour 2")
+print("contour_2 (1)")
 print(rect_contours[1])
 
-wrap_points = rect_points(rect_contours[2])
 cv2.drawContours(img, wrap_points, -1, (0,0,255), 12)
-
 
 # warp_img_width = int(img_width/2)
 # warp_img_height = int(img_height/2)
@@ -229,7 +212,7 @@ cv2.imshow('img_thresh', img_thresh)
 
 # find_bubbles(img_thresh)
 # hough_circles(img_thresh)
-detect_blob(img_thresh)
+bubble_contour(img_thresh)
 
 print(img_thresh.shape)
 
