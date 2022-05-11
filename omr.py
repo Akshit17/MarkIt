@@ -3,8 +3,6 @@ import numpy as np
 
 import imutils
 
-#TODO: Abstract the rectangular area containing the bubbles from the image
-
 def extract_rect(contours):                          #Needs optimization as it does not work for all bubblesheet examples
     rect_contours = []
     for c in contours:
@@ -62,8 +60,8 @@ def rect_points(rect_contour):                                     #Something wr
     np.append(corner_list, point_3)
     np.append(corner_list, point_4)
 
-    print("corners list")
-    print(corner_list)
+    # print("corners list")
+    # print(corner_list)
 
     new_cornerlist = np.zeros((4, 1, 2), np.int32) 
     add = corner_list.sum(1)
@@ -75,50 +73,13 @@ def rect_points(rect_contour):                                     #Something wr
     new_cornerlist[1] = corner_list[np.argmin(diff)]  #[w,0]
     new_cornerlist[2] = corner_list[np.argmax(diff)]  #[h,0]
 
-    print(new_cornerlist.shape)
-
+    # print(new_cornerlist.shape)
     return new_cornerlist
 
 
 #TODO: Find the bubbles and draw them on the image
-def find_bubbles(img):
-    rows = np.vsplit(img,10)              #Only work for evenly spead out bubbles
-    boxes=[]
-    for r in rows:
-        cols= np.hsplit(r,10)
-        for box in cols:
-            boxes.append(box)
-            cv2.imshow("Boxes",rows[0])
-    return boxes
-
-
-def hough_circles(img):
-
-    #load image
-    # img = self.imager.values[self.imager.index, :, :]
-    # img = np.float(self.image)
-    image8 = np.uint8(img)
-    output = image8.copy()
-
-    #apply hough transform
-    circles = cv2.HoughCircles(image8, cv2.HOUGH_GRADIENT, 24, 50)
-
-    #place circles and cente rectangle on image
-    if circles is not None:
-        circles = np.round(circles[0, :].astype("int"))
-
-        for (x, y, r) in circles:
-            cv2.circle(output, (x,y), r, (0, 255, 0), 4)
-            cv2.rectangle(output, (x - 5, y - 5), (x + 5, y + 5), (0, 128, 255), -1)
-
-        cv2.imshow("output", np.hstack([image8, output]))
-        cv2.waitKey(0)
-
-def bubble_contour(thresh, img_warp):
-    # find contours in the thresholded image, then initialize
-    # the list of contours that correspond to questions
-    # thresh_img_contours = thresh.copy()
-    thresh_img_contours = img_warp.copy()
+def bubble_contour(thresh):
+    # find contours in the thresholded image, then initialize the list of contours that correspond to questions
     questionCnts = []
 
     cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
@@ -133,11 +94,12 @@ def bubble_contour(thresh, img_warp):
         if w >= 4 and h >= 4 and ar >= 0.01 and ar <= 10.0 and cv2.contourArea(c) > 80:    #each bubble should be distinctively seperated from the other bubbles
             questionCnts.append(c) 
 
+    thresh_img_contours = img_warp.copy()
     cv2.drawContours(thresh_img_contours, questionCnts, -1, (0,0,255), 1)
-    cv2.imshow("Thresh_Contours", thresh_img_contours)
-    print(len(questionCnts))
+    cv2.imshow("Function Thresh_Contours", thresh_img_contours)
     cv2.waitKey(0)
 
+    print(len(questionCnts))
     return questionCnts
 
 
@@ -158,7 +120,7 @@ img = cv2.resize(img, (img_width, img_height), interpolation=cv2.INTER_AREA)
 
 
 img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)      # grayscaled image            Grayscaling bcoz further for edge detection we only require intensity info., and similar intensity pixels to detect the contours
-img_blur = cv2.GaussianBlur(img_gray, (5,5), 0)      # blurred image
+img_blur = cv2.GaussianBlur(img_gray, (5,5), 1)      # blurred image
                         # (inputimage, kernel size , sigma_x)          when only sigma_x is provived sigma_y is taken as the same as sigma_x  (sigma_x is Gaussian kernel standard deviation in X direction)
                         #https://docs.opencv.org/4.x/d4/d13/tutorial_py_filtering.html
 cv2.imshow('Blurred', img_blur)
@@ -177,19 +139,16 @@ cv2.drawContours(img_contours, contours, -1, (0,255,0), 1)  #parameters are (ima
 cv2.imshow('Contours', img_contours)
 
 rect_contours = extract_rect(contours)
+print("Length of rect_contours: ", len(rect_contours))
 cv2.drawContours(img, rect_contours[1], -1, (0,255,0), 1)
 
 wrap_points = rect_points(rect_contours[1])
 
 if wrap_points.size != 0:
-    cv2.drawContours(img, wrap_points, -1, (0,0,255), 12)
+    cv2.drawContours(img, wrap_points, -1, (255,255,55), 12)
 
-print("contour_1 (0)")
-print(rect_contours[0])
-print("contour_2 (1)")
-print(rect_contours[1])
-
-cv2.drawContours(img, wrap_points, -1, (0,0,255), 12)
+wrap_points = rect_points(rect_contours[1])
+cv2.drawContours(img, wrap_points, -1, (255,255,55), 12)
 
 # warp_img_width = int(img_width/2)
 # warp_img_height = int(img_height/2)
@@ -212,15 +171,14 @@ cv2.imshow('img_thresh', img_thresh)
 
 # find_bubbles(img_thresh)
 # hough_circles(img_thresh)
-bubble_contour(img_thresh)
+bubbles = bubble_contour(img_thresh)
 
-print(img_thresh.shape)
+cv2.drawContours(img, bubbles, -1, (0,200,255), 1)
+# cv2.imshow("Thresh_Contours", img)
 
 cv2.imshow('Original', img)
 
-
 #TODO: Implement logic for marks counting
-
 cv2.waitKey(0)
 
 
